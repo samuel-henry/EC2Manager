@@ -1,13 +1,12 @@
 Summary:
 
-• A!script!that!lets!you!interactively:
-o List!instances
-o Select!an!instance
-o List!attached!EBS!volumes
-o Detach!a!selected!volume!from!the!selected!instance.
-o List!unattached!EBS!volumes
-o Attach!a!selected!volume!to!the!selected!instance.
-o Exit!gracefully
+Lets you interatively:
+- List your EC2 instances
+- Select an EC2 instance
+- List attached EBS volumes
+- Detach an EBS volume from an EC2 instance
+- List unattached EBS volumes
+- Attach an EBS volume to an EC2 instance
 
 Instructions:
 To install/run from a running Amazon Red Hat Linux Image:
