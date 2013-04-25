@@ -8,6 +8,7 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.model.AttachVolumeRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.DetachVolumeRequest;
@@ -155,10 +156,7 @@ public class EC2Manager {
 		System.out.println("Enter the ID of the EBS volume to attach to EC2 instance " + currentInstance.getInstanceId() + ":");
 		String volumeId = scn.nextLine();
 		try {
-			Volume volumeToAttach = new Volume().withVolumeId(volumeId);
-			Collection<VolumeAttachment> volumeAttachments = new ArrayList<VolumeAttachment>();
-			volumeAttachments.add(new VolumeAttachment().withInstanceId(currentInstance.getInstanceId()));
-			volumeToAttach.setAttachments(volumeAttachments);
+			ec2client.attachVolume(new AttachVolumeRequest().withInstanceId(currentInstance.getInstanceId()).withVolumeId(volumeId));
 		} catch (Exception ex) {
 			System.out.println("There was a problem attaching " + volumeId + " to EC2 instance " + currentInstance.getInstanceId());
 			System.out.println("Please verify the volume name and try again.");
