@@ -10,6 +10,7 @@ import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
+import com.amazonaws.services.ec2.model.DetachVolumeRequest;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.InstanceBlockDeviceMapping;
 import com.amazonaws.services.ec2.model.Reservation;
@@ -31,8 +32,9 @@ public class EC2Manager {
 		System.out.println(LINE_SEPARATOR);
 		System.out.println("Welcome to the EC2 Manager");
 		System.out.println(LINE_SEPARATOR);
-		System.out.println("***Make sure you have edited your environment variables to include your AWS access keys before continuing***");
-		System.out.println(LINE_SEPARATOR);
+		System.out.println();
+		System.out.println("Make sure you have edited your environment variables to include your AWS access keys before continuing***");
+		System.out.println();
 		System.out.println("Press enter to continue...");
 
 		//formatting
@@ -184,9 +186,10 @@ public class EC2Manager {
 		try {
 			System.out.println("Enter the volume ID to detach from instance " + currentInstance.getInstanceId());
 			String volumeId = scn.nextLine();
-			VolumeAttachment volAttachment = new VolumeAttachment().withInstanceId(currentInstance.getInstanceId()).withVolumeId(volumeId);
-			volAttachment.setState(VolumeAttachmentState.Detached);
+			ec2client.detachVolume(new DetachVolumeRequest().withVolumeId(volumeId));
+			System.out.println("Succesfully detached volume " + volumeId + " from instance " + currentInstance.getInstanceId());
 		} catch (Exception ex) {
+			System.out.println(ex.getMessage());
 			System.out.println("There was a problem. Please verify that the volume ID is correct and try again.");
 		}
 	}
