@@ -8,6 +8,7 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.InstanceBlockDeviceMapping;
@@ -26,24 +27,26 @@ public class EC2Manager {
 	
 	public static void main(String[] args) {
 		//welcome the user and give them a chance to edit environment variables before continuing
+		System.out.println();
+		System.out.println(LINE_SEPARATOR);
 		System.out.println("Welcome to the EC2 Manager");
 		System.out.println(LINE_SEPARATOR);
 		System.out.println("***Make sure you have edited your environment variables to include your AWS access keys before continuing***");
 		System.out.println(LINE_SEPARATOR);
 		System.out.println("Press enter to continue...");
+
+		//formatting
+		System.out.println(LINE_SEPARATOR);
 		
 		//wait for enter
 		scn.nextLine();
 		
 		//get an ec2client
 		ec2client = getEC2Client();
-		
-		//formatting
-		System.out.println(LINE_SEPARATOR);
-		System.out.println();
 				
 		//show options
 		while (true) {
+			System.out.println();
 			System.out.println("Please select an option below by entering the corresponding number and pressing enter");
 			System.out.println();
 			System.out.println("0 Exit the program");
@@ -53,6 +56,7 @@ public class EC2Manager {
 			System.out.println("4 Detach an EBS volume from the selected instance");
 			System.out.println("5 List unattached EBS volumes");
 			System.out.println("6 Attach a volume to the selected instance");
+			System.out.println();
 			
 			//call the operation corresponding to the user's choice
 			handleUserChoice(scn.nextLine());
@@ -92,6 +96,8 @@ public class EC2Manager {
 			System.out.println("6 Attach a volume to the selected instance");
 	*********************************************************************/
 	private static void handleUserChoice(String userInput) {
+		System.out.println();
+		
 		//initialize choice to an invalid option
 		int choice = -1;
 		
@@ -204,22 +210,30 @@ public class EC2Manager {
 
 	private static void selectEC2Instance() {
 		System.out.println("Please enter the ID of the instance you would like to select:");
-		String instanceID = scn.nextLine();
+		String instanceId = scn.nextLine();
 		try {
-			currentInstance = new Instance().withInstanceId(instanceID);
-			System.out.println("Successfully selected instance: " + getBriefInstanceDescription(currentInstance));
+			DescribeInstancesResult results = ec2client.describeInstances(new DescribeInstancesRequest().withInstanceIds(instanceId));
+			for (Reservation rslt : results.getReservations()) {
+				for (Instance inst : rslt.getInstances()) {
+					if (inst.getInstanceId().equals(instanceId)) {
+						currentInstance = inst;
+						System.out.print("Successfully selected instance: " + instanceId);
+						System.out.println();
+					}
+				}
+			}
+			
 		} catch (Exception ex) {
-			System.out.println("There was a problem selecting instance " + instanceID + 
+			System.out.println("There was a problem selecting instance " + instanceId + 
 					". Please verify that this instance ID is correct and try again.");
 		}
 	}
 
-	private static String getBriefInstanceDescription(Instance anInstance) {
+	private static void printBriefInstanceDescription(Instance anInstance) {
 		System.out.print("ID: " + anInstance.getInstanceId() + SPC_STR);
 		System.out.print("NAME: " + anInstance.getKeyName() + SPC_STR);
 		System.out.print("TYPE: " + anInstance.getInstanceType() + SPC_STR);
 		System.out.println("ZONE: " + anInstance.getPlacement().getAvailabilityZone() + SPC_STR);
-		return null;
 	}
 
 	private static void listEC2Instances() {
@@ -229,7 +243,7 @@ public class EC2Manager {
 			System.out.println("Your instances:");
 			for (Reservation rslt : results.getReservations()) {
 				for (Instance inst : rslt.getInstances()) {
-					System.out.println(getBriefInstanceDescription(inst));
+					printBriefInstanceDescription(inst);
 				}
 			}
 			System.out.println();
