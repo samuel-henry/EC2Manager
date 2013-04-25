@@ -25,7 +25,7 @@ import com.amazonaws.services.ec2.model.Volume;
  * 		Detach an EBS volume from an EC2 instance
  */
 public class EC2Manager {
-	private static final String LINE_SEPARATOR = "------------------";
+	private static final String LINE_SEPARATOR = "----------------------------------------";
 	private static final String SPC_STR = " ";
 	
 	private static Scanner scn = new Scanner(System.in); //used to read user input
@@ -39,7 +39,8 @@ public class EC2Manager {
 		System.out.println("Welcome to the EC2 Manager");
 		System.out.println(LINE_SEPARATOR);
 		System.out.println();
-		System.out.println("Make sure you have edited your environment variables to include your AWS access keys before continuing***");
+		System.out.println("Make sure you have edited your environment variables " +
+							"to include your AWS access keys before continuing");
 		System.out.println();
 		System.out.println("Press enter to continue...");
 		System.out.println(LINE_SEPARATOR);
@@ -114,6 +115,7 @@ public class EC2Manager {
 			//terminate the program
 			System.out.println();
 			System.out.println("Thank you for using EC2 Manager. Goodbye.");
+			System.out.println();
 			System.exit(0);
 			break;
 		case 1:
@@ -175,21 +177,31 @@ public class EC2Manager {
 		System.out.println("Please enter the ID of the instance you would like to select:");
 		String instanceId = scn.nextLine();
 		try {
-			//get the specified instance and set it to static variable
-			DescribeInstancesResult results = ec2client.describeInstances(new DescribeInstancesRequest().withInstanceIds(instanceId));
-			for (Reservation rslt : results.getReservations()) {
-				for (Instance inst : rslt.getInstances()) {
-					if (inst.getInstanceId().equals(instanceId)) {
-						currentInstance = inst;
-						System.out.print("Successfully selected instance: " + instanceId);
-						System.out.println();
-					}
-				}
-			}
+			currentInstance = selectEC2InstanceFromId(instanceId);
+			System.out.println("Succesfully selected instance " + instanceId);
 		} catch (Exception ex) {
 			System.out.println("There was a problem selecting instance " + instanceId + 
 					". Please verify that this instance ID is correct and try again.");
 		}
+	}
+	
+	/********************************************************************
+	* Let the user select an EC2 instance by specifying an instance id
+	*********************************************************************/
+	private static Instance selectEC2InstanceFromId(String instanceId) throws Exception {
+		Instance myCurrentInstance = null;
+		
+		//get the specified instance and set it to static variable
+		DescribeInstancesResult results = ec2client.describeInstances(new DescribeInstancesRequest().withInstanceIds(instanceId));
+		for (Reservation rslt : results.getReservations()) {
+			for (Instance inst : rslt.getInstances()) {
+				if (inst.getInstanceId().equals(instanceId)) {
+					myCurrentInstance = inst;
+				}
+			}
+		}
+		
+		return myCurrentInstance;
 	}
 	
 	/********************************************************************
@@ -201,6 +213,9 @@ public class EC2Manager {
 			System.out.println("You have not selected an instance. Please select an instance and try again");
 			return;
 		}
+		
+		//refresh the current instance to get updated statuses
+		refreshCurrentInstance();
 		
 		//list the EBS volumes attached to the selected instance
 		System.out.println("Listing EBS Volumes attached to EC2 instance " + currentInstance.getInstanceId() + "...");
@@ -237,13 +252,20 @@ public class EC2Manager {
 			
 			//alert the user that the volume is being detached and they should re-run the program to see updated volume state
 			System.out.println("Detaching volume " + volumeId + " from instance " + currentInstance.getInstanceId());
-			System.out.println("Detaching may take a moment. Please monitor the state of this volume by listing the volumes attached to this instance.");
-			System.out.println("Please monitor the state of this volume by listing the volumes attached/detached to this instance the next time you run EC2Manager.");
-			System.out.println("Goodbye.");
-			System.exit(0);
+
+			//refresh the current instance after detaching
+			refreshCurrentInstance();
 		} catch (Exception ex) {
 			System.out.println(ex.getMessage());
 			System.out.println("There was a problem. Please verify that the volume ID is correct and try again.");
+		}
+	}
+
+	private static void refreshCurrentInstance() {
+		try {
+			currentInstance = selectEC2InstanceFromId(currentInstance.getInstanceId());
+		} catch (Exception e) {
+			System.out.println("There was a problem reloading your selected instance. Please try re-selecting it.");
 		}
 	}
 
@@ -276,6 +298,9 @@ public class EC2Manager {
 			return;
 		}
 		
+		//refresh the current instance to get updated statuses
+		refreshCurrentInstance();
+		
 		//request the id of an EBS volume to attach to the selected instance
 		System.out.println("Enter the ID of the EBS volume to attach to EC2 instance " + currentInstance.getInstanceId() + ":");
 		String volumeId = scn.nextLine();
@@ -286,10 +311,10 @@ public class EC2Manager {
 			
 			//alert the user that we are attaching the volume and they should re-run the program to see updated volume state
 			System.out.println("Attaching volume " + volumeId + " to instance " + currentInstance.getInstanceId());
-			System.out.println("Attaching may take a few minutes.");
-			System.out.println("Please monitor the state of this volume by listing the volumes attached/detached to this instance the next time you run EC2Manager.");
-			System.out.println("Goodbye.");
-			System.exit(0);
+
+			//refresh the current instance after attaching
+			refreshCurrentInstance();
+			
 		} catch (Exception ex) {
 			System.out.println("There was a problem attaching " + volumeId + " to EC2 instance " + currentInstance.getInstanceId());
 			System.out.println("Please verify the volume name and try again.");
